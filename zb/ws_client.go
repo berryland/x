@@ -64,7 +64,9 @@ func (c *WebSocketClient) Disconnect() {
 	}
 	c.running = false
 
-	c.conn.Close()
+	if c.conn != nil {
+		c.conn.Close()
+	}
 }
 
 func (c *WebSocketClient) SubscribeTicker(symbol string, callback func(ticker Ticker)) {
