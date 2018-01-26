@@ -67,12 +67,12 @@ func (c *WebSocketClient) Disconnect() {
 	c.conn.Close()
 }
 
-func (c *WebSocketClient) SubscribeQuote(symbol string, callback func(quote Quote)) {
+func (c *WebSocketClient) SubscribeTicker(symbol string, callback func(ticker Ticker)) {
 	channel := strings.Replace(symbol, "_", "", 1) + "_ticker"
 	c.register(channel, func(value []byte) interface{} {
-		return marshalQuote(value)
+		return marshalTicker(value)
 	}, func(v interface{}) {
-		callback(v.(Quote))
+		callback(v.(Ticker))
 	})
 	c.conn.WriteJSON(eventMessage{Event: "addChannel", Channel: channel})
 }

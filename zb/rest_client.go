@@ -53,22 +53,22 @@ func (c *RestClient) GetSymbols() (map[string]SymbolConfig, error) {
 	return configs, nil
 }
 
-func (c *RestClient) GetLatestQuote(symbol string) (Quote, error) {
+func (c *RestClient) GetTicker(symbol string) (Ticker, error) {
 	q := map[string]string{
 		"market": symbol,
 	}
 	resp, err := c.doGet(buildUrl(DataApiUrl+"ticker", q).String())
 	if err != nil {
-		return Quote{}, err
+		return Ticker{}, err
 	}
 
 	bytes := resp.ReadBytes()
 	err = extractDataError(bytes)
 	if err != nil {
-		return Quote{}, err
+		return Ticker{}, err
 	}
 
-	return marshalQuote(bytes), nil
+	return marshalTicker(bytes), nil
 }
 
 func (c *RestClient) GetKlines(symbol string, period string, since uint64, size uint16) ([]Kline, error) {

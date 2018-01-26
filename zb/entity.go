@@ -10,7 +10,7 @@ type SymbolConfig struct {
 	PriceScale  byte
 }
 
-type Quote struct {
+type Ticker struct {
 	Volume float64
 	Last   float64
 	Sell   float64
@@ -20,7 +20,7 @@ type Quote struct {
 	Time   uint64
 }
 
-func marshalQuote(value []byte) Quote {
+func marshalTicker(value []byte) Ticker {
 	ticker, _, _, _ := json.Get(value, "ticker")
 	volumeString, _ := json.GetString(ticker, "vol")
 	lastString, _ := json.GetString(ticker, "last")
@@ -38,7 +38,7 @@ func marshalQuote(value []byte) Quote {
 	low, _ := strconv.ParseFloat(lowString, 64)
 	time, _ := strconv.ParseUint(timeString, 10, 64)
 
-	return Quote{Volume: volume, Last: last, Sell: sell, Buy: buy, High: high, Low: low, Time: time}
+	return Ticker{Volume: volume, Last: last, Sell: sell, Buy: buy, High: high, Low: low, Time: time}
 }
 
 type Kline struct {

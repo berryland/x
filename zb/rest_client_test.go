@@ -15,9 +15,9 @@ func TestRestClient_GetSymbols(t *testing.T) {
 	NewRestClient().GetSymbols()
 }
 
-func TestRestClient_GetLatestQuote(t *testing.T) {
-	quote, _ := NewRestClient().GetLatestQuote("btc_usdt")
-	assert.True(t, quote.Last > 0)
+func TestRestClient_GetTicker(t *testing.T) {
+	ticker, _ := NewRestClient().GetTicker("btc_usdt")
+	assert.True(t, ticker.Last > 0)
 }
 
 func TestRestClient_GetKlines(t *testing.T) {

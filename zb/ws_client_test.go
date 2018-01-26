@@ -5,11 +5,11 @@ import (
 	"time"
 )
 
-func TestWebSocketClient_SubscribeQuote(t *testing.T) {
+func TestWebSocketClient_SubscribeTicker(t *testing.T) {
 	c := NewWebSocketClient()
 	c.Connect()
-	c.SubscribeQuote("btc_usdt", func(quote Quote) {
-		println(quote.Time)
+	c.SubscribeTicker("btc_usdt", func(ticker Ticker) {
+		println(ticker.Time)
 		c.Disconnect()
 	})
 

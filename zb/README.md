@@ -10,8 +10,8 @@ dep ensure -add github.com/berryland/zb
 ## Usage
 ### RestClient
 ```go
-func TestRestClient_GetLatestQuote(t *testing.T) {
-    quote, err := NewRestClient().GetLatestQuote("btc_usdt")
+func TestRestClient_GetTicker(t *testing.T) {
+    ticker, err := NewRestClient().GetTicker("btc_usdt")
     //other codes
     //...
 }
@@ -19,11 +19,11 @@ func TestRestClient_GetLatestQuote(t *testing.T) {
 
 ### WebSocketClient
 ```go
-func TestWebSocketClient_SubscribeQuote(t *testing.T) {
+func TestWebSocketClient_SubscribeTicker(t *testing.T) {
     c := NewWebSocketClient()
     c.Connect()
-    c.SubscribeQuote("btc_usdt", func(quote Quote) {
-        println(quote.Last)
+    c.SubscribeTicker("btc_usdt", func(ticker Ticker) {
+        println(ticker.Last)
     })
 }
 ```
