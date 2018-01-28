@@ -1,9 +1,26 @@
-package zb
+package x
 
 import (
-	json "github.com/buger/jsonparser"
-	"strconv"
+	"strings"
 )
+
+type Currency struct {
+	Symbol string
+}
+
+func ParseCurrency(currency string) Currency {
+	return Currency{Symbol: currency}
+}
+
+type Pair struct {
+	Base      Currency
+	Valuation Currency
+}
+
+func ParsePair(pair string) Pair {
+	s := strings.Split(pair, "_")
+	return Pair{Base: ParseCurrency(s[0]), Valuation: ParseCurrency(s[1])}
+}
 
 type SymbolConfig struct {
 	AmountScale byte
@@ -18,27 +35,6 @@ type Ticker struct {
 	High   float64
 	Low    float64
 	Time   uint64
-}
-
-func marshalTicker(value []byte) Ticker {
-	ticker, _, _, _ := json.Get(value, "ticker")
-	volumeString, _ := json.GetString(ticker, "vol")
-	lastString, _ := json.GetString(ticker, "last")
-	sellString, _ := json.GetString(ticker, "sell")
-	buyString, _ := json.GetString(ticker, "buy")
-	highString, _ := json.GetString(ticker, "high")
-	lowString, _ := json.GetString(ticker, "low")
-	timeString, _ := json.GetString(value, "date")
-
-	volume, _ := strconv.ParseFloat(volumeString, 64)
-	last, _ := strconv.ParseFloat(lastString, 64)
-	sell, _ := strconv.ParseFloat(sellString, 64)
-	buy, _ := strconv.ParseFloat(buyString, 64)
-	high, _ := strconv.ParseFloat(highString, 64)
-	low, _ := strconv.ParseFloat(lowString, 64)
-	time, _ := strconv.ParseUint(timeString, 10, 64)
-
-	return Ticker{Volume: volume, Last: last, Sell: sell, Buy: buy, High: high, Low: low, Time: time}
 }
 
 type Kline struct {
@@ -61,7 +57,7 @@ type Trade struct {
 type TradeType int8
 
 const (
-	All  TradeType = iota - 1
+	All TradeType = iota - 1
 	Sell
 	Buy
 )
@@ -86,16 +82,6 @@ type Depth struct {
 type DepthEntry struct {
 	Price  float64
 	Volume float64
-}
-
-func marshalDepthEntries(value []byte, keys ...string) []DepthEntry {
-	var entry []DepthEntry
-	json.ArrayEach(value, func(value []byte, dataType json.ValueType, offset int, err error) {
-		price, _ := json.GetFloat(value, "[0]")
-		volume, _ := json.GetFloat(value, "[1]")
-		entry = append(entry, DepthEntry{Price: price, Volume: volume})
-	}, keys...)
-	return entry
 }
 
 type Account struct {
@@ -136,7 +122,7 @@ type Order struct {
 type OrderStatus uint8
 
 const (
-	Pending         OrderStatus = iota
+	Pending OrderStatus = iota
 	Cancelled
 	Finished
 	PartiallyFilled

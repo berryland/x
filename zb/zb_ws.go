@@ -1,23 +1,24 @@
 package zb
 
 import (
+	. "github.com/berryland/x"
+	json "github.com/buger/jsonparser"
 	"github.com/gorilla/websocket"
 	"log"
 	"strings"
-	"github.com/buger/jsonparser"
 )
 
 const WebSocketServerUrl = "wss://api.zb.com:9999/websocket"
 
-type WebSocketClient struct {
+type ZbWebSocketClient struct {
 	running   bool
 	conn      *websocket.Conn
 	decoders  map[string]func([]byte) interface{}
 	callbacks map[string]func(interface{})
 }
 
-func NewWebSocketClient() *WebSocketClient {
-	return &WebSocketClient{running: false, decoders: make(map[string]func([]byte) interface{}), callbacks: make(map[string]func(interface{}))}
+func NewWebSocketClient() *ZbWebSocketClient {
+	return &ZbWebSocketClient{running: false, decoders: make(map[string]func([]byte) interface{}), callbacks: make(map[string]func(interface{}))}
 }
 
 type eventMessage struct {
@@ -25,7 +26,7 @@ type eventMessage struct {
 	Channel string `json:"channel"`
 }
 
-func (c *WebSocketClient) Connect() {
+func (c *ZbWebSocketClient) Connect() {
 	if c.running {
 		return
 	}
@@ -47,7 +48,7 @@ func (c *WebSocketClient) Connect() {
 				break
 			}
 
-			channel, _ := jsonparser.GetString(bytes, "channel")
+			channel, _ := json.GetString(bytes, "channel")
 			if decoder, ok := c.decoders[channel]; ok {
 				value := decoder(bytes)
 				if callback, ok := c.callbacks[channel]; ok {
@@ -58,7 +59,7 @@ func (c *WebSocketClient) Connect() {
 	}()
 }
 
-func (c *WebSocketClient) Disconnect() {
+func (c *ZbWebSocketClient) Disconnect() {
 	if !c.running {
 		return
 	}
@@ -69,7 +70,7 @@ func (c *WebSocketClient) Disconnect() {
 	}
 }
 
-func (c *WebSocketClient) SubscribeTicker(symbol string, callback func(ticker Ticker)) {
+func (c *ZbWebSocketClient) SubscribeTicker(symbol string, callback func(ticker Ticker)) {
 	channel := strings.Replace(symbol, "_", "", 1) + "_ticker"
 	c.register(channel, func(value []byte) interface{} {
 		return marshalTicker(value)
@@ -79,15 +80,15 @@ func (c *WebSocketClient) SubscribeTicker(symbol string, callback func(ticker Ti
 	c.conn.WriteJSON(eventMessage{Event: "addChannel", Channel: channel})
 }
 
-func (c *WebSocketClient) register(channel string, decoder func(value []byte) interface{}, callback func(interface{})) {
+func (c *ZbWebSocketClient) register(channel string, decoder func(value []byte) interface{}, callback func(interface{})) {
 	c.registerDecoder(channel, decoder)
 	c.registerCallback(channel, callback)
 }
 
-func (c *WebSocketClient) registerDecoder(channel string, decoder func(value []byte) interface{}) {
+func (c *ZbWebSocketClient) registerDecoder(channel string, decoder func(value []byte) interface{}) {
 	c.decoders[channel] = decoder
 }
 
-func (c *WebSocketClient) registerCallback(channel string, callback func(interface{})) {
+func (c *ZbWebSocketClient) registerCallback(channel string, callback func(interface{})) {
 	c.callbacks[channel] = callback
 }

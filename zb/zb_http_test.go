@@ -1,9 +1,10 @@
 package zb
 
 import (
+	. "github.com/berryland/x"
 	"github.com/stretchr/testify/assert"
-	"testing"
 	"os"
+	"testing"
 )
 
 var (
@@ -12,50 +13,50 @@ var (
 )
 
 func TestRestClient_GetSymbols(t *testing.T) {
-	NewRestClient().GetSymbols()
+	NewHttpClient().GetSymbols()
 }
 
 func TestRestClient_GetTicker(t *testing.T) {
-	ticker, _ := NewRestClient().GetTicker("btc_usdt")
+	ticker, _ := NewHttpClient().GetTicker("btc_usdt")
 	assert.True(t, ticker.Last > 0)
 }
 
 func TestRestClient_GetKlines(t *testing.T) {
-	klines, _ := NewRestClient().GetKlines("btc_usdt", "5min", 1516029900000, 20)
+	klines, _ := NewHttpClient().GetKlines(ParsePair("btc_usdt"), "5min", 1516029900000, 20)
 	assert.True(t, klines[0].High > 0)
 }
 
 func TestRestClient_GetTrades(t *testing.T) {
-	trades, _ := NewRestClient().GetTrades("btc_usdt", 0)
+	trades, _ := NewHttpClient().GetTrades("btc_usdt", 0)
 	assert.True(t, trades[0].Price > 0)
 }
 
 func TestRestClient_GetDepth(t *testing.T) {
-	depth, _ := NewRestClient().GetDepth("btc_usdt", 10)
+	depth, _ := NewHttpClient().GetDepth("btc_usdt", 10)
 	assert.NotNil(t, depth)
 	assert.True(t, depth.Time > 0)
 
-	_, err := NewRestClient().GetDepth("wrong_symbol", 10)
+	_, err := NewHttpClient().GetDepth("wrong_symbol", 10)
 	assert.NotNil(t, err)
 }
 
 func TestRestClient_GetAccount(t *testing.T) {
-	account, _ := NewRestClient().GetAccount(accessKey, secretKey)
+	account, _ := NewHttpClient().GetAccount(accessKey, secretKey)
 	assert.NotNil(t, account.Username)
 }
 
 func TestRestClient_GetOrders(t *testing.T) {
-	NewRestClient().GetOrders("btc_usdt", All, 0, 10, accessKey, secretKey)
+	NewHttpClient().GetOrders("btc_usdt", All, 0, 10, accessKey, secretKey)
 }
 
 func TestRestClient_GetOrder(t *testing.T) {
-	NewRestClient().GetOrder("btc_usdt", 2018012160893558, accessKey, secretKey)
+	NewHttpClient().GetOrder("btc_usdt", 2018012160893558, accessKey, secretKey)
 }
 
 func TestRestClient_PlaceOrder(t *testing.T) {
-	NewRestClient().PlaceOrder("btc_usdt", 15000, 0.01, Sell, accessKey, secretKey)
+	NewHttpClient().PlaceOrder("btc_usdt", 15000, 0.01, Sell, accessKey, secretKey)
 }
 
 func TestRestClient_CancelOrder(t *testing.T) {
-	NewRestClient().CancelOrder("btc_usdt", 2018012261281063, accessKey, secretKey)
+	NewHttpClient().CancelOrder("btc_usdt", 2018012261281063, accessKey, secretKey)
 }
