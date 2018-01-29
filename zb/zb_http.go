@@ -20,6 +20,37 @@ const (
 	TradeApiUrl = "https://trade.zb.com/api/"
 )
 
+var ApiCodes = map[uint16]ApiCode{
+	1000: OK,
+	1001: GeneralError,
+	1002: InternalError,
+	1003: AuthenticationFailed,
+	1004: FundPasswordLocked,
+	1005: IncorrectFundPassword,
+	1006: AuthenticationAuditing,
+	1007: EmptyChannel,
+	1008: EmptyEvent,
+	1009: Maintained,
+	2001: InsufficientFund,
+	2002: InsufficientFund,
+	2003: InsufficientFund,
+	2005: InsufficientFund,
+	2006: InsufficientFund,
+	2007: InsufficientFund,
+	2008: InsufficientFund,
+	2009: InsufficientFund,
+	3001: OrderNotFound,
+	3002: InvalidPrice,
+	3003: InvalidAmount,
+	3004: UserNotFound,
+	3005: InvalidArgument,
+	3006: InvalidIpAddress,
+	3007: RequestTimeExpired,
+	3008: TradeRecordNotFound,
+	4001: Unavailable,
+	4002: TooFrequent,
+}
+
 type ZbHttpClient struct {
 	Client *HttpClient
 }
@@ -389,9 +420,9 @@ func extractDataApiError(value []byte) error {
 
 func extractTradeApiError(value []byte) error {
 	code, err := json.GetInt(value, "code")
-	if err == json.KeyPathNotFoundError || ApiCode(code) == OK {
+	if err == json.KeyPathNotFoundError || ApiCodes[uint16(code)] == OK {
 		return nil
 	}
 	msg, _ := json.GetString(value, "message")
-	return &ApiError{Code: ApiCode(code), Message: msg}
+	return &ApiError{Code: ApiCodes[uint16(code)], Message: msg}
 }
