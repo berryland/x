@@ -30,8 +30,8 @@ type SymbolConfig struct {
 type Ticker struct {
 	Amount float64
 	Last   float64
-	Sell   float64
-	Buy    float64
+	Ask    float64
+	Bid    float64
 	High   float64
 	Low    float64
 	Time   uint64

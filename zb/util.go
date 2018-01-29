@@ -24,7 +24,7 @@ func marshalTicker(value []byte) Ticker {
 	low, _ := strconv.ParseFloat(lowString, 64)
 	time, _ := strconv.ParseUint(timeString, 10, 64)
 
-	return Ticker{Amount: amount, Last: last, Sell: sell, Buy: buy, High: high, Low: low, Time: time}
+	return Ticker{Amount: amount, Last: last, Ask: sell, Bid: buy, High: high, Low: low, Time: time}
 }
 
 func marshalDepthEntries(value []byte, keys ...string) []DepthEntry {

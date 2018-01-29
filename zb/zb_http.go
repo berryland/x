@@ -82,9 +82,9 @@ func (c *ZbHttpClient) GetSymbols() (map[string]SymbolConfig, error) {
 	return configs, nil
 }
 
-func (c *ZbHttpClient) GetTicker(symbol string) (Ticker, error) {
+func (c *ZbHttpClient) GetTicker(pair Pair) (Ticker, error) {
 	q := Query{
-		"market": symbol,
+		"market": parseSymbol(pair),
 	}
 	resp, err := c.Client.DoGet(DataApiUrl+"ticker", q)
 	if err != nil {

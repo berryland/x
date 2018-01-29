@@ -17,7 +17,7 @@ func TestZbHttpClient_GetSymbols(t *testing.T) {
 }
 
 func TestZbHttpClient_GetTicker(t *testing.T) {
-	ticker, err := NewHttpClient().GetTicker("btc_usdt")
+	ticker, err := NewHttpClient().GetTicker(ParsePair("btc_usdt"))
 	assert.Nil(t, err)
 	assert.True(t, ticker.Last > 0)
 }
