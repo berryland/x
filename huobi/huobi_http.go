@@ -4,7 +4,6 @@ import (
 	. "github.com/berryland/x"
 	json "github.com/buger/jsonparser"
 	"net/http"
-	"strconv"
 )
 
 const (
@@ -13,40 +12,40 @@ const (
 )
 
 type HuobiHttpClient struct {
-	client *http.Client
+	Client *HttpClient
 }
 
 func NewHttpClient() *HuobiHttpClient {
-	c := new(HuobiHttpClient)
-	c.client = &http.Client{}
-	return c
+	return &HuobiHttpClient{Client: &HttpClient{Client: &http.Client{}}}
 }
 
 func (c *HuobiHttpClient) GetKlines(pair Pair, period string, since uint64, size uint16) ([]Kline, error) {
 	var klines []Kline
-	q := map[string]string{
+	q := Query{
 		"symbol": parseSymbol(pair),
-		"period":   period,
-		"size":   strconv.FormatUint(uint64(size), 10),
+		"period": period,
+		"size":   size,
 	}
-	resp, err := c.doGet(BuildUrl(DataApiUrl+"market/history/kline", q).String())
+	resp, err := c.Client.DoGet(DataApiUrl+"history/kline", q)
 	if err != nil {
 		return klines, err
 	}
 
 	bytes := resp.ReadBytes()
-	err = extractDataError(bytes)
-	if err != nil {
-		return klines, err
-	}
+	//err = extractDataError(bytes)
+	//if err != nil {
+	//	return klines, err
+	//}
 
+	println(string(bytes))
+
+	time, _ := json.GetInt(bytes, "ts")
 	json.ArrayEach(bytes, func(value []byte, dataType json.ValueType, offset int, err error) {
-		time, _ := json.GetInt(value, "[0]")
-		open, _ := json.GetFloat(value, "[1]")
-		high, _ := json.GetFloat(value, "[2]")
-		low, _ := json.GetFloat(value, "[3]")
-		close, _ := json.GetFloat(value, "[4]")
-		amount, _ := json.GetFloat(value, "[5]")
+		open, _ := json.GetFloat(value, "open")
+		high, _ := json.GetFloat(value, "high")
+		low, _ := json.GetFloat(value, "low")
+		close, _ := json.GetFloat(value, "close")
+		amount, _ := json.GetFloat(value, "amount")
 		klines = append(klines, Kline{Time: uint64(time), Open: open, High: high, Low: low, Close: close, Amount: amount})
 	}, "data")
 
