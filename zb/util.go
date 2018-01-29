@@ -8,7 +8,7 @@ import (
 
 func marshalTicker(value []byte) Ticker {
 	ticker, _, _, _ := json.Get(value, "ticker")
-	volumeString, _ := json.GetString(ticker, "vol")
+	amountString, _ := json.GetString(ticker, "vol")
 	lastString, _ := json.GetString(ticker, "last")
 	sellString, _ := json.GetString(ticker, "sell")
 	buyString, _ := json.GetString(ticker, "buy")
@@ -16,7 +16,7 @@ func marshalTicker(value []byte) Ticker {
 	lowString, _ := json.GetString(ticker, "low")
 	timeString, _ := json.GetString(value, "date")
 
-	volume, _ := strconv.ParseFloat(volumeString, 64)
+	amount, _ := strconv.ParseFloat(amountString, 64)
 	last, _ := strconv.ParseFloat(lastString, 64)
 	sell, _ := strconv.ParseFloat(sellString, 64)
 	buy, _ := strconv.ParseFloat(buyString, 64)
@@ -24,15 +24,15 @@ func marshalTicker(value []byte) Ticker {
 	low, _ := strconv.ParseFloat(lowString, 64)
 	time, _ := strconv.ParseUint(timeString, 10, 64)
 
-	return Ticker{Volume: volume, Last: last, Sell: sell, Buy: buy, High: high, Low: low, Time: time}
+	return Ticker{Amount: amount, Last: last, Sell: sell, Buy: buy, High: high, Low: low, Time: time}
 }
 
 func marshalDepthEntries(value []byte, keys ...string) []DepthEntry {
 	var entry []DepthEntry
 	json.ArrayEach(value, func(value []byte, dataType json.ValueType, offset int, err error) {
 		price, _ := json.GetFloat(value, "[0]")
-		volume, _ := json.GetFloat(value, "[1]")
-		entry = append(entry, DepthEntry{Price: price, Volume: volume})
+		amount, _ := json.GetFloat(value, "[1]")
+		entry = append(entry, DepthEntry{Price: price, Amount: amount})
 	}, keys...)
 	return entry
 }

@@ -7,13 +7,12 @@ import (
 	"fmt"
 	. "github.com/berryland/x"
 	json "github.com/buger/jsonparser"
-	"io/ioutil"
-	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+	"net/http"
 )
 
 const (
@@ -22,24 +21,22 @@ const (
 )
 
 type ZbHttpClient struct {
-	client *http.Client
+	Client *HttpClient
 }
 
 func NewHttpClient() *ZbHttpClient {
-	c := new(ZbHttpClient)
-	c.client = &http.Client{}
-	return c
+	return &ZbHttpClient{Client: &HttpClient{Client: &http.Client{}}}
 }
 
 func (c *ZbHttpClient) GetSymbols() (map[string]SymbolConfig, error) {
 	configs := map[string]SymbolConfig{}
-	resp, err := c.doGet(DataApiUrl + "markets")
+	resp, err := c.Client.DoGet(DataApiUrl+"markets", Query{})
 	if err != nil {
 		return configs, err
 	}
 
 	bytes := resp.ReadBytes()
-	err = extractDataError(bytes)
+	err = extractDataApiError(bytes)
 	if err != nil {
 		return configs, err
 	}
@@ -48,23 +45,23 @@ func (c *ZbHttpClient) GetSymbols() (map[string]SymbolConfig, error) {
 		symbol, _ := json.ParseString(key)
 		amountScale, _ := json.GetInt(value, "amountScale")
 		priceScale, _ := json.GetInt(value, "priceScale")
-		configs[symbol] = SymbolConfig{byte(amountScale), byte(priceScale)}
+		configs[symbol] = SymbolConfig{AmountScale: byte(amountScale), PriceScale: byte(priceScale)}
 		return nil
 	})
 	return configs, nil
 }
 
 func (c *ZbHttpClient) GetTicker(symbol string) (Ticker, error) {
-	q := map[string]string{
+	q := Query{
 		"market": symbol,
 	}
-	resp, err := c.doGet(BuildUrl(DataApiUrl+"ticker", q).String())
+	resp, err := c.Client.DoGet(DataApiUrl+"ticker", q)
 	if err != nil {
 		return Ticker{}, err
 	}
 
 	bytes := resp.ReadBytes()
-	err = extractDataError(bytes)
+	err = extractDataApiError(bytes)
 	if err != nil {
 		return Ticker{}, err
 	}
@@ -74,19 +71,19 @@ func (c *ZbHttpClient) GetTicker(symbol string) (Ticker, error) {
 
 func (c *ZbHttpClient) GetKlines(pair Pair, period string, since uint64, size uint16) ([]Kline, error) {
 	var klines []Kline
-	q := map[string]string{
+	q := Query{
 		"market": parseSymbol(pair),
 		"type":   period,
-		"since":  strconv.FormatUint(since, 10),
-		"size":   strconv.FormatUint(uint64(size), 10),
+		"since":  since,
+		"size":   size,
 	}
-	resp, err := c.doGet(BuildUrl(DataApiUrl+"kline", q).String())
+	resp, err := c.Client.DoGet(DataApiUrl+"kline", q)
 	if err != nil {
 		return klines, err
 	}
 
 	bytes := resp.ReadBytes()
-	err = extractDataError(bytes)
+	err = extractDataApiError(bytes)
 	if err != nil {
 		return klines, err
 	}
@@ -97,8 +94,8 @@ func (c *ZbHttpClient) GetKlines(pair Pair, period string, since uint64, size ui
 		high, _ := json.GetFloat(value, "[2]")
 		low, _ := json.GetFloat(value, "[3]")
 		close, _ := json.GetFloat(value, "[4]")
-		volume, _ := json.GetFloat(value, "[5]")
-		klines = append(klines, Kline{Time: uint64(time), Open: open, High: high, Low: low, Close: close, Volume: volume})
+		amount, _ := json.GetFloat(value, "[5]")
+		klines = append(klines, Kline{Time: uint64(time), Open: open, High: high, Low: low, Close: close, Amount: amount})
 	}, "data")
 
 	return klines, nil
@@ -106,17 +103,17 @@ func (c *ZbHttpClient) GetKlines(pair Pair, period string, since uint64, size ui
 
 func (c *ZbHttpClient) GetTrades(symbol string, since uint64) ([]Trade, error) {
 	var trades []Trade
-	q := map[string]string{
+	q := Query{
 		"market": symbol,
-		"since":  strconv.FormatUint(since, 10),
+		"since":  since,
 	}
-	resp, err := c.doGet(BuildUrl(DataApiUrl+"trades", q).String())
+	resp, err := c.Client.DoGet(DataApiUrl+"trades", q)
 	if err != nil {
 		return trades, err
 	}
 
 	bytes := resp.ReadBytes()
-	err = extractDataError(bytes)
+	err = extractDataApiError(bytes)
 	if err != nil {
 		return trades, err
 	}
@@ -138,17 +135,17 @@ func (c *ZbHttpClient) GetTrades(symbol string, since uint64) ([]Trade, error) {
 }
 
 func (c *ZbHttpClient) GetDepth(symbol string, size uint8) (Depth, error) {
-	q := map[string]string{
+	q := Query{
 		"market": symbol,
-		"size":   strconv.FormatUint(uint64(size), 10),
+		"size":   size,
 	}
-	resp, err := c.doGet(BuildUrl(DataApiUrl+"depth", q).String())
+	resp, err := c.Client.DoGet(DataApiUrl+"depth", q)
 	if err != nil {
 		return Depth{}, err
 	}
 
 	bytes := resp.ReadBytes()
-	err = extractDataError(bytes)
+	err = extractDataApiError(bytes)
 	if err != nil {
 		return Depth{}, err
 	}
@@ -160,20 +157,20 @@ func (c *ZbHttpClient) GetDepth(symbol string, size uint8) (Depth, error) {
 }
 
 func (c *ZbHttpClient) GetAccount(accessKey string, secretKey string) (Account, error) {
-	q := map[string]string{
+	q := Query{
 		"accesskey": accessKey,
 		"method":    "getAccountInfo",
-	}
-	u := BuildUrl(TradeApiUrl+"getAccountInfo", q)
-	sign(u, secretKey)
+	}.Encode()
 
-	resp, err := c.doGet(u.String())
+	sign(q, secretKey)
+
+	resp, err := c.Client.DoGet(TradeApiUrl+"getAccountInfo", q)
 	if err != nil {
 		return Account{}, err
 	}
 
 	bytes := resp.ReadBytes()
-	err = extractTradeError(bytes)
+	err = extractTradeApiError(bytes)
 	if err != nil {
 		return Account{}, err
 	}
@@ -203,24 +200,24 @@ func (c *ZbHttpClient) GetAccount(accessKey string, secretKey string) (Account, 
 }
 
 func (c *ZbHttpClient) PlaceOrder(symbol string, price, amount float64, tradeType TradeType, accessKey, secretKey string) (uint64, error) {
-	q := map[string]string{
+	q := Query{
 		"currency":  symbol,
-		"price":     strconv.FormatFloat(price, 'f', -1, 64),
-		"amount":    strconv.FormatFloat(amount, 'f', -1, 64),
-		"tradeType": strconv.FormatUint(uint64(tradeType), 8),
+		"price":     price,
+		"amount":    amount,
+		"tradeType": tradeType,
 		"accesskey": accessKey,
 		"method":    "order",
-	}
-	u := BuildUrl(TradeApiUrl+"order", q)
-	sign(u, secretKey)
+	}.Encode()
 
-	resp, err := c.doGet(u.String())
+	sign(q, secretKey)
+
+	resp, err := c.Client.DoGet(TradeApiUrl+"order", q)
 	if err != nil {
 		return 0, err
 	}
 
 	bytes := resp.ReadBytes()
-	err = extractTradeError(bytes)
+	err = extractTradeApiError(bytes)
 	if err != nil {
 		return 0, err
 	}
@@ -231,22 +228,22 @@ func (c *ZbHttpClient) PlaceOrder(symbol string, price, amount float64, tradeTyp
 }
 
 func (c *ZbHttpClient) CancelOrder(symbol string, id uint64, accessKey, secretKey string) error {
-	q := map[string]string{
+	q := Query{
 		"currency":  symbol,
-		"id":        strconv.FormatUint(id, 10),
+		"id":        id,
 		"accesskey": accessKey,
 		"method":    "cancelOrder",
-	}
-	u := BuildUrl(TradeApiUrl+"cancelOrder", q)
-	sign(u, secretKey)
+	}.Encode()
 
-	resp, err := c.doGet(u.String())
+	sign(q, secretKey)
+
+	resp, err := c.Client.DoGet(TradeApiUrl+"cancelOrder", q)
 	if err != nil {
 		return err
 	}
 
 	bytes := resp.ReadBytes()
-	err = extractTradeError(bytes)
+	err = extractTradeApiError(bytes)
 	if err != nil {
 		return err
 	}
@@ -255,22 +252,22 @@ func (c *ZbHttpClient) CancelOrder(symbol string, id uint64, accessKey, secretKe
 }
 
 func (c *ZbHttpClient) GetOrder(symbol string, id uint64, accessKey, secretKey string) (Order, error) {
-	q := map[string]string{
+	q := Query{
 		"currency":  symbol,
 		"id":        strconv.FormatUint(id, 10),
 		"accesskey": accessKey,
 		"method":    "getOrder",
-	}
-	u := BuildUrl(TradeApiUrl+"getOrder", q)
-	sign(u, secretKey)
+	}.Encode()
 
-	resp, err := c.doGet(u.String())
+	sign(q, secretKey)
+
+	resp, err := c.Client.DoGet(TradeApiUrl+"getOrder", q)
 	if err != nil {
 		return Order{}, err
 	}
 
 	bytes := resp.ReadBytes()
-	err = extractTradeError(bytes)
+	err = extractTradeApiError(bytes)
 	if err != nil {
 		return Order{}, err
 	}
@@ -280,13 +277,13 @@ func (c *ZbHttpClient) GetOrder(symbol string, id uint64, accessKey, secretKey s
 
 func (c *ZbHttpClient) GetOrders(symbol string, tradeType TradeType, page uint64, size uint16, accessKey, secretKey string) ([]Order, error) {
 	u := getUrlToGetOrders(symbol, tradeType, page, size, accessKey, secretKey)
-	resp, err := c.doGet(u.String())
+	resp, err := c.Client.DoGet(u.String(), nil)
 	if err != nil {
 		return []Order{}, err
 	}
 
 	bytes := resp.ReadBytes()
-	err = extractTradeError(bytes)
+	err = extractTradeApiError(bytes)
 	if err != nil {
 		return []Order{}, err
 	}
@@ -326,46 +323,48 @@ func getUrlToGetOrders(symbol string, tradeType TradeType, page uint64, size uin
 }
 
 func getOrdersIgnoreTradeType(symbol string, page uint64, size uint16, accessKey, secretKey string) *url.URL {
-	q := map[string]string{
+	q := Query{
 		"currency":  symbol,
-		"pageIndex": strconv.FormatUint(page, 10),
-		"pageSize":  strconv.FormatUint(uint64(size), 10),
+		"pageIndex": page,
+		"pageSize":  size,
 		"accesskey": accessKey,
 		"method":    "getOrdersIgnoreTradeType",
-	}
+	}.Encode()
+
+	sign(q, secretKey)
+
 	u := BuildUrl(TradeApiUrl+"getOrdersIgnoreTradeType", q)
-	sign(u, secretKey)
 	return u
 }
 
 func getOrdersNew(symbol string, tradeType TradeType, page uint64, size uint16, accessKey, secretKey string) *url.URL {
-	q := map[string]string{
+	q := Query{
 		"currency":  symbol,
-		"tradeType": strconv.FormatUint(uint64(tradeType), 8),
-		"pageIndex": strconv.FormatUint(page, 10),
-		"pageSize":  strconv.FormatUint(uint64(size), 10),
+		"tradeType": tradeType,
+		"pageIndex": page,
+		"pageSize":  size,
 		"accesskey": accessKey,
 		"method":    "getOrdersNew",
-	}
+	}.Encode()
+
+	sign(q, secretKey)
+
 	u := BuildUrl(TradeApiUrl+"getOrdersNew", q)
-	sign(u, secretKey)
 	return u
 }
 
-func sign(u *url.URL, secretKey string) {
-	q := u.Query()
-	q.Set("sign", genSign(secretKey, u.Query()))
-	q.Set("reqTime", strconv.FormatInt(time.Now().Unix()*1000, 10))
-	u.RawQuery = q.Encode()
+func sign(query Query, secretKey string) {
+	query["sign"] = genSign(secretKey, query)
+	query["reqTime"] = time.Now().Unix() * 1000
 }
 
-func genSign(secretKey string, params map[string][]string) string {
+func genSign(secretKey string, params map[string]interface{}) string {
 	h := hmac.New(md5.New, []byte(fmt.Sprintf("%x", sha1.Sum([]byte(secretKey)))))
-	h.Write([]byte(buildQueryString(params)))
+	h.Write([]byte(getSortedQueryString(params)))
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func buildQueryString(params map[string][]string) string {
+func getSortedQueryString(params map[string]interface{}) string {
 	keys := make([]string, len(params))
 	for k := range params {
 		keys = append(keys, k)
@@ -374,15 +373,13 @@ func buildQueryString(params map[string][]string) string {
 
 	var kvs []string
 	for _, k := range keys {
-		for _, v := range params[k] {
-			kvs = append(kvs, fmt.Sprintf("%v=%v", k, v))
-		}
+		kvs = append(kvs, fmt.Sprintf("%v=%v", k, params[k]))
 	}
 
 	return strings.Join(kvs, "&")
 }
 
-func extractDataError(value []byte) error {
+func extractDataApiError(value []byte) error {
 	msg, err := json.GetString(value, "error")
 	if err == json.KeyPathNotFoundError {
 		return nil
@@ -390,7 +387,7 @@ func extractDataError(value []byte) error {
 	return &ApiError{Code: GeneralError, Message: msg}
 }
 
-func extractTradeError(value []byte) error {
+func extractTradeApiError(value []byte) error {
 	code, err := json.GetInt(value, "code")
 	if err == json.KeyPathNotFoundError || ApiCode(code) == OK {
 		return nil

@@ -28,7 +28,7 @@ type SymbolConfig struct {
 }
 
 type Ticker struct {
-	Volume float64
+	Amount float64
 	Last   float64
 	Sell   float64
 	Buy    float64
@@ -42,7 +42,7 @@ type Kline struct {
 	Close  float64
 	High   float64
 	Low    float64
-	Volume float64
+	Amount float64
 	Time   uint64
 }
 
@@ -57,7 +57,7 @@ type Trade struct {
 type TradeType int8
 
 const (
-	All TradeType = iota - 1
+	All  TradeType = iota - 1
 	Sell
 	Buy
 )
@@ -81,7 +81,7 @@ type Depth struct {
 
 type DepthEntry struct {
 	Price  float64
-	Volume float64
+	Amount float64
 }
 
 type Account struct {
@@ -122,7 +122,7 @@ type Order struct {
 type OrderStatus uint8
 
 const (
-	Pending OrderStatus = iota
+	Pending         OrderStatus = iota
 	Cancelled
 	Finished
 	PartiallyFilled

@@ -46,8 +46,8 @@ func (c *HuobiHttpClient) GetKlines(pair Pair, period string, since uint64, size
 		high, _ := json.GetFloat(value, "[2]")
 		low, _ := json.GetFloat(value, "[3]")
 		close, _ := json.GetFloat(value, "[4]")
-		volume, _ := json.GetFloat(value, "[5]")
-		klines = append(klines, Kline{Time: uint64(time), Open: open, High: high, Low: low, Close: close, Volume: volume})
+		amount, _ := json.GetFloat(value, "[5]")
+		klines = append(klines, Kline{Time: uint64(time), Open: open, High: high, Low: low, Close: close, Amount: amount})
 	}, "data")
 
 	return klines, nil
