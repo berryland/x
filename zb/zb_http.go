@@ -420,9 +420,22 @@ func extractDataApiError(value []byte) error {
 
 func extractTradeApiError(value []byte) error {
 	code, err := json.GetInt(value, "code")
-	if err == json.KeyPathNotFoundError || ApiCodes[uint16(code)] == OK {
+	if err == json.KeyPathNotFoundError {
 		return nil
 	}
-	msg, _ := json.GetString(value, "message")
-	return &ApiError{Code: ApiCodes[uint16(code)], Message: msg}
+
+	if c := getApiCode(code); c == OK {
+		return nil
+	} else {
+		msg, _ := json.GetString(value, "message")
+		return &ApiError{Code: c, Message: msg}
+	}
+}
+
+func getApiCode(code int64) ApiCode {
+	if c, ok := ApiCodes[uint16(code)]; ok {
+		return c
+	}
+
+	return Unknown
 }
