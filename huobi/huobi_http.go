@@ -32,12 +32,10 @@ func (c *HuobiHttpClient) GetKlines(pair Pair, period string, since uint64, size
 	}
 
 	bytes := resp.ReadBytes()
-	//err = extractDataError(bytes)
-	//if err != nil {
-	//	return klines, err
-	//}
-
-	println(string(bytes))
+	err = extractDataApiError(bytes)
+	if err != nil {
+		return klines, err
+	}
 
 	time, _ := json.GetInt(bytes, "ts")
 	json.ArrayEach(bytes, func(value []byte, dataType json.ValueType, offset int, err error) {
@@ -50,4 +48,15 @@ func (c *HuobiHttpClient) GetKlines(pair Pair, period string, since uint64, size
 	}, "data")
 
 	return klines, nil
+}
+
+func extractDataApiError(value []byte) error {
+	status, _ := json.GetString(value, "status")
+	if status == "ok" {
+		return nil
+	}
+	//TODO
+	//code, _ := json.GetString(value, "err-code")
+	msg, _ := json.GetString(value, "err-msg")
+	return &ApiError{Code: GeneralError, Message: msg}
 }
