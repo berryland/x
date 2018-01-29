@@ -11,6 +11,10 @@ const (
 	TradeApiUrl = "https://api.huobi.pro/v1/"
 )
 
+var ApiCodes = map[string]ApiCode{
+	"bad-argument": InvalidArgument,
+}
+
 type HuobiHttpClient struct {
 	Client *HttpClient
 }
@@ -50,13 +54,48 @@ func (c *HuobiHttpClient) GetKlines(pair Pair, period string, since uint64, size
 	return klines, nil
 }
 
+func (c *HuobiHttpClient) GetTicker(pair Pair) (Ticker, error) {
+	q := Query{
+		"symbol": parseSymbol(pair),
+	}
+	resp, err := c.Client.DoGet(DataApiUrl+"detail/merged", q)
+	if err != nil {
+		return Ticker{}, err
+	}
+
+	bytes := resp.ReadBytes()
+	err = extractDataApiError(bytes)
+	if err != nil {
+		return Ticker{}, err
+	}
+
+	time, _ := json.GetInt(bytes, "ts")
+	ticker, _, _, _ := json.Get(bytes, "tick")
+	close, _ := json.GetFloat(ticker, "close")
+	high, _ := json.GetFloat(ticker, "high")
+	low, _ := json.GetFloat(ticker, "low")
+	amount, _ := json.GetFloat(ticker, "amount")
+	ask, _ := json.GetFloat(ticker, "ask", "[0]")
+	bid, _ := json.GetFloat(ticker, "bid", "[0]")
+
+	return Ticker{Amount: amount, High: high, Low: low, Last: close, Bid: bid, Ask: ask, Time: uint64(time)}, nil
+}
+
 func extractDataApiError(value []byte) error {
 	status, _ := json.GetString(value, "status")
 	if status == "ok" {
 		return nil
 	}
-	//TODO
-	//code, _ := json.GetString(value, "err-code")
+
+	code, _ := json.GetString(value, "err-code")
 	msg, _ := json.GetString(value, "err-msg")
-	return &ApiError{Code: GeneralError, Message: msg}
+	return &ApiError{Code: getApiCode(code), Message: msg}
+}
+
+func getApiCode(code string) ApiCode {
+	if c, ok := ApiCodes[code]; ok {
+		return c
+	}
+
+	return Unknown
 }

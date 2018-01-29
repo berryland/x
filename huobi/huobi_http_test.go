@@ -11,3 +11,9 @@ func TestHuobiHttpClient_GetKlines(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotEmpty(t, klines)
 }
+
+func TestHuobiHttpClient_GetTicker(t *testing.T) {
+	ticker, err := NewHttpClient().GetTicker(ParsePair("btc_usdt"))
+	assert.Nil(t, err)
+	assert.True(t, ticker.Last > 0)
+}
