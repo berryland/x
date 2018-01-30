@@ -8,4 +8,4 @@ dep ensure -add github.com/berryland/x
 ```
 
 ## Usage
-* [ZB](./zb/README.md)
+* [ZB](./zb)
